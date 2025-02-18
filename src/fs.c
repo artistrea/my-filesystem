@@ -157,9 +157,10 @@ void get_block(uint32_t block, struct block_data *meta) {
   fread(&meta->name_size, sizeof(meta->name_size), 1, main_mem);
   fread(&meta->data_size, sizeof(meta->data_size), 1, main_mem);
 
-  fread(&meta->name, sizeof(*meta->name), meta->name_size, main_mem);
+  fread(meta->name, sizeof(*meta->name), meta->name_size, main_mem);
+  meta->name[meta->name_size] = 0;
 
-  fread(&meta->data, sizeof(*meta->data), meta->data_size, main_mem);
+  fread(meta->data, sizeof(*meta->data), meta->data_size, main_mem);
 }
 
 
@@ -261,6 +262,7 @@ int unlink_blocks(struct block_data *parent_block, uint32_t parent_addr, uint32_
   if (i == parent_block->data_size) return 1;
 
   memcpy(&parent_block->data[i], &parent_block->data[i+1], parent_block->data_size - i - 1);
+  parent_block->data_size--;
 
   write_encoded_file_data(
     (struct encoded_file_data){
@@ -287,7 +289,7 @@ int fs_unlink(char* path) {
   char *parent_path = malloc(strlen(path)+1);
   fs_join(path, "..", parent_path);
 
-  char *file_name = malloc(strlen(path))+1;
+  char *file_name = malloc(strlen(path)+1);
 
   uint32_t parent_block_addr;
 
