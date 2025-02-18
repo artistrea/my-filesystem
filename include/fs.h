@@ -46,6 +46,10 @@ int get_block_from_path(const char* path, uint32_t *block_addr, struct block_dat
 
 int fs_join(char* cwd, char* path, char* result);
 
+int fs_link(char* dir, char* to_link);
+
+int fs_unlink(char* path);
+
 int fs_get_filename(char* abs_path, char* result);
 
 void setup_filesystem(char *main_mem_location);

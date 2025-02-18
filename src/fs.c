@@ -252,12 +252,15 @@ int fs_link(char* dir, char* to_link) {
   return link_blocks(&parent_block, parent_block_addr, block_addr);
 }
 
-int unlink_blocks() {
+int unlink_blocks(struct block_data *parent_block, uint32_t parent_addr, uint32_t to_unlink_addr) {
   int i=0;
-  while (i < parent_block->data_size && parent_block->data[i] != to_unlink_addr) {
-    
-  }
-  parent_block->data[parent_block->data_size++] = to_link_addr;
+
+  while (i < parent_block->data_size && parent_block->data[i] != to_unlink_addr) i++;
+
+  // not linked
+  if (i == parent_block->data_size) return 1;
+
+  memcpy(&parent_block->data[i], &parent_block->data[i+1], parent_block->data_size - i - 1);
 
   write_encoded_file_data(
     (struct encoded_file_data){
@@ -271,23 +274,26 @@ int unlink_blocks() {
 }
 
 int fs_unlink(char* path) {
+  uint32_t block_addr;
+
+  struct block_data block;
+
+  int res = get_block_from_path(path, &block_addr, &block);
+
+  if (res) {
+    return 1;
+  }
+
+  char *parent_path = malloc(strlen(path)+1);
+  fs_join(path, "..", parent_path);
+
+  char *file_name = malloc(strlen(path))+1;
+
   uint32_t parent_block_addr;
 
   struct block_data parent_block;
 
-  int res = get_block_from_path(path, &parent_block_addr, &parent_block);
-
-  if (res == 0) {
-    printf("Directory already exists\n");
-    return 1;
-  }
-
-  char *parent_path = malloc(strlen(path));
-  fs_join(path, "..", parent_path);
-
-  char *dir_name = malloc(strlen(path));
-
-  fs_get_filename(path, dir_name);
+  fs_get_filename(path, file_name);
 
   res = get_block_from_path(parent_path, &parent_block_addr, &parent_block);
   // printf("parent_addr: %d\n", parent_block_addr);
@@ -295,7 +301,7 @@ int fs_unlink(char* path) {
   if (res) {
     printf("fatal error when getting block from path\n");
     free(parent_path);
-    free(dir_name);
+    free(file_name);
     return 1;
   }
 
@@ -330,10 +336,10 @@ int fs_mkdir(char* path) {
     return 1;
   }
 
-  char *parent_path = malloc(strlen(path));
+  char *parent_path = malloc(strlen(path)+1);
   fs_join(path, "..", parent_path);
 
-  char *dir_name = malloc(strlen(path));
+  char *dir_name = malloc(strlen(path)+1);
 
   fs_get_filename(path, dir_name);
 
@@ -465,10 +471,10 @@ int fs_create_file(char* path, uint32_t *data, uint16_t data_len) {
 
   if (already_has_block) return 1;
 
-  char *parent_path = malloc(strlen(path));
+  char *parent_path = malloc(strlen(path)+1);
   fs_join(path, "..", parent_path);
 
-  char *file_name = malloc(strlen(path));
+  char *file_name = malloc(strlen(path)+1);
 
   fs_get_filename(path, file_name);
 

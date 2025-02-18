@@ -6,7 +6,7 @@ struct parsed_command {
   // max argc
   char *argv[100];
 
-  int (*call)(int argc, char** argv);
+  void (*call)(int argc, char** argv);
 };
 
 struct parsed_command cli_parse_cmd(char* cmd_str);

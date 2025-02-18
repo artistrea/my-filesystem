@@ -32,11 +32,17 @@ struct recognized_cmd {
   void (*handler)(int argc, char** argv);
 };
 
+static char cwd[100] = ROOT_DIRNAME "/";
+
+char* get_cwd() {
+  return cwd;
+}
+
 void exit_handler(int _, char** __) {
   exit(0);
 }
 
-void print_help_handler();
+void print_help_handler(int argc, char **argv);
 
 void cli_mkdir(int argc, char **argv);
 
@@ -55,7 +61,51 @@ void cli_rm(int argc, char **argv);
 void cli_rmdir(int argc, char **argv);
 
 void cli_mv(int argc, char **argv) {
-  printf("TODO\n");
+  if (argc != 3) {
+    printf("'mv' command requires 2 parameters");
+  }
+
+  int res;
+
+  char* from = malloc(sizeof(char) * (strlen(cwd) + strlen(argv[1]) + 1));
+  fs_join(cwd, argv[1], from);
+
+  char* to = malloc(sizeof(char) * (strlen(cwd) + strlen(argv[2]) + 1));
+  fs_join(cwd, argv[2], to);
+
+  if (strcmp(from, to) == 0) {
+    free(to);
+    free(from);
+    return;
+  }
+
+  res = fs_link(to, from);
+
+  if (res) {
+    printf("Could not move %s to %s\n", from, to);
+    free(from);
+    free(to);
+
+    return;
+  }
+
+  res = fs_unlink(from);
+
+  if (res) {
+    printf("Problem unlinking from '%s'\n", from);
+    res = fs_unlink(to);
+    if (res) {
+      printf("Could not rollback operation!\n");
+    }
+
+    free(from);
+    free(to);
+
+    return;
+  }
+
+  free(from);
+  free(to);
 }
 
 void cli_cp(int argc, char **argv) {
@@ -68,12 +118,6 @@ void cli_rm(int argc, char **argv) {
 
 void cli_rmdir(int argc, char **argv) {
   printf("TODO\n");
-}
-
-static char cwd[100] = ROOT_DIRNAME "/";
-
-char* get_cwd() {
-  return cwd;
 }
 
 void cli_cwd() {
@@ -145,7 +189,7 @@ struct recognized_cmd default_cmds[] = {
 
 const int n_recognized_commands = sizeof(default_cmds) / sizeof(struct recognized_cmd);
 
-void print_help_handler() {
+void print_help_handler(int argc, char **argv) {
   printf("This is a filesystem being simulated inside a file.\n");
   printf("Commands:\n");
   for (int i=0;i<n_recognized_commands;i++) {
