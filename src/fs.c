@@ -163,8 +163,6 @@ void get_block(uint32_t block, struct block_data *meta) {
   fread(meta->data, sizeof(*meta->data), meta->data_size, main_mem);
 }
 
-
-
 // returns 0 if ok
 int get_block_from_path(const char* path, uint32_t *block_addr, struct block_data *block) {
   int i=2;

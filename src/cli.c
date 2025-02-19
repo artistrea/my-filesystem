@@ -258,7 +258,7 @@ void cli_ls(int argc, char **argv) {
   struct block_data* data = fs_ls(result, &blocks_returned);
   // fs_ls(result);
   for (int i=0;i<blocks_returned;i++) {
-    printf("\t%s%c\n", data[i].name, (data[i].flags & FILE_BLOCK_DIRECTORY) ? '/' : ' ');
+    printf("%s%c\n", data[i].name, (data[i].flags & FILE_BLOCK_DIRECTORY) ? '/' : ' ');
   }
 
   if (data != NULL) free(data);
