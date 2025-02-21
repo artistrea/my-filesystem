@@ -54,6 +54,8 @@ int fs_rm(char* path, int rmdir);
 
 void fs_print_full_filetree();
 
+int fs_change_filename(char* filepath, char* new_name);
+
 int fs_get_filename(char* abs_path, char* result);
 
 void setup_filesystem(char *main_mem_location);

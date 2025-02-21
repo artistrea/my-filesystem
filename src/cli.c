@@ -158,6 +158,28 @@ void cli_rmdir(int argc, char **argv) {
   fs_rm(abs_path, 1);
 }
 
+void cli_chn(int argc, char **argv) {
+  if (argc != 3) {
+    printf("'chn' expects two arguments\n");
+    return;
+  }
+
+  char *abs_path = get_abs(argv[1]);
+
+  if (abs_path == NULL) {
+    printf("Invalid path given. Cannot create directory\n");
+    return;
+  }
+
+  int res = fs_change_filename(abs_path, argv[2]);
+
+  if (res) {
+    printf("Could not find '%s' to change its name", argv[1]);
+  }
+
+  free(abs_path);
+}
+
 void cli_cwd() {
   printf("%s\n", get_cwd());
 }
@@ -174,8 +196,18 @@ struct recognized_cmd default_cmds[] = {
     .description="Traverses and prints entire filesystem tree"
   },
   {
+    .cmd_name="ls",
+    .handler=&cli_ls,
+    .description="Lists directories and files in a given path"
+  },
+  {
     .cmd_name="mv",
     .handler=&cli_mv,
+    .description="Moves file or directory to a given path (without changing its name)"
+  },
+  {
+    .cmd_name="chn",
+    .handler=&cli_chn,
     .description="Moves file or directory to a given path (without changing its name)"
   },
   {
@@ -184,19 +216,14 @@ struct recognized_cmd default_cmds[] = {
     .description="Creates a directory with the given name"
   },
   {
+    .cmd_name="rmdir",
+    .handler=&cli_rmdir,
+    .description="Removes a directory from given path"
+  },
+  {
     .cmd_name="touch",
     .handler=&cli_touch,
     .description="Creates a file with the given name"
-  },
-  {
-    .cmd_name="cd",
-    .handler=&cli_cd,
-    .description="Navigates to given directory"
-  },
-  {
-    .cmd_name="ls",
-    .handler=&cli_ls,
-    .description="Lists directories and files in a given path"
   },
   {
     .cmd_name="rm",
@@ -204,9 +231,9 @@ struct recognized_cmd default_cmds[] = {
     .description="Removes a file from given path"
   },
   {
-    .cmd_name="rmdir",
-    .handler=&cli_rmdir,
-    .description="Removes a directory from given path"
+    .cmd_name="cd",
+    .handler=&cli_cd,
+    .description="Navigates to given directory"
   },
   {
     .cmd_name="exit",
@@ -255,7 +282,7 @@ void cli_touch(int argc, char **argv) {
     printf("Invalid path given. Cannot create file\n");
     return;
   }
-  int r = fs_create_file(result, "", 0);
+  int r = fs_create_file(result, NULL, 0);
 
   if (r) {
     printf("Could not create file\n");
@@ -346,8 +373,6 @@ struct parsed_command cli_parse_cmd(char* cmd_str) {
 
     cmd_str++;
   }
-
-  int found=0;
 
   for (int i=0;i<n_recognized_commands;i++) {
     if (strcmp(default_cmds[i].cmd_name, ncdm.argv[0]) == 0) {

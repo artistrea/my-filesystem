@@ -215,6 +215,21 @@ int get_block_from_path(const char* path, uint32_t *block_addr, struct block_dat
   return 0;
 }
 
+// TODO: check for repeated links (by name, not by addr)
+// in the meanwhile, protect before calling this
+int link_blocks(struct block_data *parent_block, uint32_t parent_addr, uint32_t to_link_addr) {
+  parent_block->data[parent_block->data_size++] = to_link_addr;
+
+  write_encoded_file_data(
+    (struct encoded_file_data){
+      .blocks=parent_block,
+      .n_blocks=1
+    },
+    parent_addr
+  );
+  return 0;
+}
+
 int fs_link(char* dir, char* to_link) {
   char *file_name = malloc(strlen(to_link));
 
@@ -358,21 +373,6 @@ int fs_unlink(char* path) {
   return unlink_blocks(&parent_block, parent_block_addr, block_addr);
 }
 
-// TODO: check for repeated links (by name, not by addr)
-// in the meanwhile, protect before calling this
-int link_blocks(struct block_data *parent_block, uint32_t parent_addr, uint32_t to_link_addr) {
-  parent_block->data[parent_block->data_size++] = to_link_addr;
-
-  write_encoded_file_data(
-    (struct encoded_file_data){
-      .blocks=parent_block,
-      .n_blocks=1
-    },
-    parent_addr
-  );
-  return 0;
-}
-
 int fs_mkdir(char* path) {
   // printf("creating dir %s\n", path);
   uint32_t parent_block_addr;
@@ -481,21 +481,21 @@ void fs_print_full_filetree() {
     struct block_data_w_level top = block_stack[stk_top-1];
     stk_top--;
 
-    int spaces=top.level*4;
+    int spaces=top.level;
     while (spaces--) {
-      if (spaces == 1)
-        printf("|");
+      if (spaces == 0)
+        printf("└── ");
       // else if (spaces == 0)
       //   printf("-");
       else
-        printf(" ");
+        printf("|   ");
     }
 
     if (!(block_stack[stk_top].data.flags & FILE_BLOCK_DIRECTORY)) {
-      printf("  %s (file)\n", top.data.name);
+      printf("%s\n", top.data.name);
       continue;
     } else {
-      printf("  %s (dir)\n", top.data.name);
+      printf("%s/\n", top.data.name);
     }
 
     for (int i=0; i < top.data.data_size; i++) {
@@ -504,6 +504,29 @@ void fs_print_full_filetree() {
       stk_top++;
     }
   }
+}
+
+int fs_change_filename(char* filepath, char* new_name) {
+  struct block_data block;
+  uint32_t block_addr;
+  int res = get_block_from_path(filepath, &block_addr, &block);
+
+  if (res) {
+    return 1;
+  }
+
+  strcpy(block.name, new_name);
+  block.name_size = strlen(new_name);
+
+  write_encoded_file_data(
+    (struct encoded_file_data){
+      .blocks=&block,
+      .n_blocks=1
+    },
+    block_addr
+  );
+
+  return 0;
 }
 
 int fs_join(char* cwd, char* path, char* result) {
