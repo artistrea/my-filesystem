@@ -255,8 +255,8 @@ struct recognized_cmd default_cmds[] = {
 const int n_recognized_commands = sizeof(default_cmds) / sizeof(struct recognized_cmd);
 
 void print_help_handler(int argc, char **argv) {
-  printf("This is a filesystem being simulated inside a file.\n");
-  printf("Commands:\n");
+  printf("This is a filesystem inside a single file.\n");
+  printf("Commands implemented:\n");
   for (int i=0;i<n_recognized_commands;i++) {
     printf(" - %s\n", default_cmds[i].cmd_name);
     printf("\t%s\n", default_cmds[i].description);
