@@ -1,6 +1,9 @@
 # My filesystem
 
-This filesystem uses a file as storage.
+This filesystem uses a file as storage. Some linux commands were implemented, and everything was implemented
+naively.
+
+Repository: https://github.com/artistrea/my-filesystem
 
 ## How to run
 
