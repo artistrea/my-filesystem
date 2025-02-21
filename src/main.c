@@ -18,9 +18,53 @@ int main(int argc, char** argv) {
     "This is a filesystem implemented very naively (read 'the first solutions that came to head')\n"
     "Content is persisted on storage\n"
     "You can create, remove and move files and directories using commands similar to linux\n"
-    "Some commands may have slightly different behavior, such as the 'mv' command\n"
+    "Some "
+  );
+  textcolor(CLR_BRIGHT, CLR_YELLOW);
+  printf(
+    "commands may have "
+  );
+  textcolor(CLR_CLEAR, CLR_WHITE);
+  printf(
+    "slightly "
+  );
+  textcolor(CLR_BRIGHT, CLR_YELLOW);
+  printf(
+    "different behavior"
+  );
+  textcolor(CLR_CLEAR, CLR_WHITE);
+  printf(
+    ", such as the "
+  );
+  textcolor(CLR_BRIGHT, CLR_YELLOW);
+  printf(
+    "'mv' "
+  );
+  textcolor(CLR_CLEAR, CLR_WHITE);
+  printf(
+    "command\n"
     "\tOn linux the 'mv' command may change the name of a file or directory\n"
-    "\tOn this filesystem you can use 'chn' to change a file or directory name instead\n"
+  );
+  printf(
+    "\tOn this filesystem you can use "
+  );
+  textcolor(CLR_BRIGHT, CLR_YELLOW);
+  printf(
+    "'chn' to change "
+  );
+  textcolor(CLR_CLEAR, CLR_WHITE);
+  printf(
+    "a file or directory "
+  );
+  textcolor(CLR_BRIGHT, CLR_YELLOW);
+  printf(
+    "name "
+  );
+  textcolor(CLR_CLEAR, CLR_WHITE);
+  printf(
+    "instead\n"
+  );
+  printf(
     "Enter 'help' to know more about the commands implemented!\n"
   );
 
