@@ -14,4 +14,9 @@ Then run passing any filename to use as storage:
 ./bin any-filename
 ```
 
+Example usage:
+
+![example1](./public/os-files1.png)
+
+![example2](./public/os-files2.png)
 
