@@ -164,6 +164,13 @@ void cli_chn(int argc, char **argv) {
     return;
   }
 
+  for (int i=0;i<strlen(argv[2]); i++) {
+    if (argv[2][i] == '/' || argv[2][i] == '~') {
+      printf("Filename cannot contain any character '/' or '~'\n");
+      return;
+    }
+  }
+
   char *abs_path = get_abs(argv[1]);
 
   if (abs_path == NULL) {
@@ -173,8 +180,11 @@ void cli_chn(int argc, char **argv) {
 
   int res = fs_change_filename(abs_path, argv[2]);
 
-  if (res) {
-    printf("Could not find '%s' to change its name", argv[1]);
+  if (res == 1) {
+    printf("Could not find '%s' to change its name\n", argv[1]);
+  }
+  if (res == 2) {
+    printf("There already exists a file with the name %s\n", argv[2]);
   }
 
   free(abs_path);

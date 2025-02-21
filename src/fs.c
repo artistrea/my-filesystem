@@ -509,7 +509,19 @@ void fs_print_full_filetree() {
 int fs_change_filename(char* filepath, char* new_name) {
   struct block_data block;
   uint32_t block_addr;
+
+  char p[100];
+
+  fs_join(filepath, "..", p);
+  fs_join(p, new_name, p);
+
   int res = get_block_from_path(filepath, &block_addr, &block);
+
+  if (res == 0) {
+    return 2;
+  }
+  
+  res = get_block_from_path(filepath, &block_addr, &block);
 
   if (res) {
     return 1;
