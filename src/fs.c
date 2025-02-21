@@ -273,6 +273,56 @@ int unlink_blocks(struct block_data *parent_block, uint32_t parent_addr, uint32_
   return 0;
 }
 
+int fs_rm(char* path, int rmdir) {
+  uint32_t addr;
+  struct block_data block;
+
+  if (get_block_from_path(path, &addr, &block)) {
+    printf("Could not find '%s' to remove!", path);
+    return 1;
+  }
+
+  if (!rmdir && (block.flags & FILE_BLOCK_DIRECTORY)) {
+    printf("%s is not a file!\n", path);
+    return 1;
+  }
+  if (rmdir && !(block.flags & FILE_BLOCK_DIRECTORY)) {
+    printf("%s is not a directory!\n", path);
+    return 1;
+  }
+  if ((block.flags & FILE_BLOCK_DIRECTORY) && block.data_size) {
+    printf("Cannot remove non empty directory!\n");
+    return 1;
+  }
+
+  char *parent_path = malloc(strlen(path) + 1);
+
+  fs_join(path, "..", parent_path);
+
+  uint32_t parent_addr;
+  struct block_data parent_block;
+
+  if (get_block_from_path(parent_path, &parent_addr, &parent_block)) {
+    printf("Could not find directory %s\n", parent_path);
+    free(parent_path);
+    return 1;
+  }
+
+  unlink_blocks(&parent_block, parent_addr, addr);
+
+  block.flags = FILE_BLOCK_FREE;
+
+  write_encoded_file_data(
+    (struct encoded_file_data){
+      .blocks=&block, .n_blocks=1
+    },
+    addr
+  );
+
+  free(parent_path);
+  return 0;
+}
+
 int fs_unlink(char* path) {
   uint32_t block_addr;
 
@@ -410,6 +460,50 @@ struct block_data* fs_ls(const char* abs_path, int *blocks_returned) {
   }
 
   return ret;
+}
+ 
+// yeah, this shouldn't really be here,
+// but i dug a hole with bad api decisions and i really wanna just print the file tree
+// better to rewrite than refactor, honestly
+struct block_data_w_level {
+  struct block_data data;
+  int level;
+};
+
+void fs_print_full_filetree() {
+  struct block_data_w_level block_stack[MAX_FILES];
+  uint32_t stk_top=0;
+  block_stack[stk_top].level = 0;
+  get_block(0, &block_stack[stk_top].data);
+  stk_top++;
+
+  while (stk_top) {
+    struct block_data_w_level top = block_stack[stk_top-1];
+    stk_top--;
+
+    int spaces=top.level*4;
+    while (spaces--) {
+      if (spaces == 1)
+        printf("|");
+      // else if (spaces == 0)
+      //   printf("-");
+      else
+        printf(" ");
+    }
+
+    if (!(block_stack[stk_top].data.flags & FILE_BLOCK_DIRECTORY)) {
+      printf("  %s (file)\n", top.data.name);
+      continue;
+    } else {
+      printf("  %s (dir)\n", top.data.name);
+    }
+
+    for (int i=0; i < top.data.data_size; i++) {
+      block_stack[stk_top].level = top.level + 1;
+      get_block(top.data.data[i], &block_stack[stk_top].data);
+      stk_top++;
+    }
+  }
 }
 
 int fs_join(char* cwd, char* path, char* result) {

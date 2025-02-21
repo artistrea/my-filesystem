@@ -5,16 +5,6 @@
 #include "cli.h"
 #include "fs.h"
 
-enum COMMANDS {
-  CMD_CREATE_FILE,
-  CMD_CREATE_DIR,
-  CMD_LIST_DIR,
-  CMD_HELP,
-  CMD_UNRECOGNIZED,
-  CMD_ERRORED,
-  CMD_EXIT
-};
-
 // char result[1000];
 // char data[] = "testano alguma coisa";
 // fs_join(ROOT_DIRNAME, "teste,opa", result);
@@ -33,6 +23,19 @@ struct recognized_cmd {
 };
 
 static char cwd[100] = ROOT_DIRNAME "/";
+
+char* get_abs(char* path) {
+  char* res = malloc(strlen(cwd) + strlen(path) + 1);
+  if (memcmp(path, ROOT_DIRNAME, strlen(ROOT_DIRNAME)) == 0) {
+    strcpy(res, path);
+  } else {
+    if (fs_join(cwd, path, res)) {
+      printf("Invalid path given. Cannot create directory\n");
+      return NULL;
+    }
+  }
+  return res;
+}
 
 char* get_cwd() {
   return cwd;
@@ -54,24 +57,31 @@ void cli_cd(int argc, char **argv);
 
 void cli_mv(int argc, char **argv);
 
-void cli_cp(int argc, char **argv);
-
 void cli_rm(int argc, char **argv);
 
 void cli_rmdir(int argc, char **argv);
 
+void cli_print_tree(int argc, char **argv);
+
 void cli_mv(int argc, char **argv) {
   if (argc != 3) {
-    printf("'mv' command requires 2 parameters");
+    printf("'mv' command requires 2 parameters\n");
+    return;
   }
 
   int res;
 
-  char* from = malloc(sizeof(char) * (strlen(cwd) + strlen(argv[1]) + 1));
-  fs_join(cwd, argv[1], from);
+  char* from = get_abs(argv[1]);
+  if (from == NULL) {
+    printf("Could not resolve path %s", argv[1]);
+    return;
+  }
 
-  char* to = malloc(sizeof(char) * (strlen(cwd) + strlen(argv[2]) + 1));
-  fs_join(cwd, argv[2], to);
+  char* to = get_abs(argv[2]);
+  if (to == NULL) {
+    printf("Could not resolve path %s", argv[2]);
+    return;
+  }
 
   if (strcmp(from, to) == 0) {
     free(to);
@@ -108,16 +118,44 @@ void cli_mv(int argc, char **argv) {
   free(to);
 }
 
-void cli_cp(int argc, char **argv) {
-  printf("TODO\n");
+void cli_print_tree(int argc, char **argv) {
+  if (argc != 1) {
+    printf("'print-tree' command receives no parameters\n");
+    return;
+  }
+
+  fs_print_full_filetree();
 }
 
 void cli_rm(int argc, char **argv) {
-  printf("TODO\n");
+  if (argc != 2) {
+    printf("rm expects one argument\n");
+    return;
+  }
+  char *abs_path = get_abs(argv[1]);
+
+  if (abs_path == NULL) {
+    printf("Invalid path given. Cannot create directory\n");
+    return;
+  }
+
+  fs_rm(abs_path, 0);
 }
 
 void cli_rmdir(int argc, char **argv) {
-  printf("TODO\n");
+  if (argc != 2) {
+    printf("rm expects one argument\n");
+    return;
+  }
+
+  char *abs_path = get_abs(argv[1]);
+
+  if (abs_path == NULL) {
+    printf("Invalid path given. Cannot create directory\n");
+    return;
+  }
+
+  fs_rm(abs_path, 1);
 }
 
 void cli_cwd() {
@@ -131,9 +169,14 @@ struct recognized_cmd default_cmds[] = {
     .description="Prints helpful information about this program"
   },
   {
+    .cmd_name="print-tree",
+    .handler=&cli_print_tree,
+    .description="Traverses and prints entire filesystem tree"
+  },
+  {
     .cmd_name="mv",
     .handler=&cli_mv,
-    .description="Prints helpful information about this program"
+    .description="Moves file or directory to a given path (without changing its name)"
   },
   {
     .cmd_name="mkdir",
@@ -150,35 +193,20 @@ struct recognized_cmd default_cmds[] = {
     .handler=&cli_cd,
     .description="Navigates to given directory"
   },
-  // {
-  //   .cmd_name="cwd",
-  //   .handler=&cli_cwd,
-  //   .description="Prints the current directory path"
-  // },
   {
     .cmd_name="ls",
     .handler=&cli_ls,
     .description="Lists directories and files in a given path"
   },
   {
-    .cmd_name="mv",
-    .handler=&cli_mv,
-    .description="Lists directories and files in a given path"
-  },
-  {
-    .cmd_name="cp",
-    .handler=&cli_cp,
-    .description="Lists directories and files in a given path"
-  },
-  {
     .cmd_name="rm",
     .handler=&cli_rm,
-    .description="Lists directories and files in a given path"
+    .description="Removes a file from given path"
   },
   {
     .cmd_name="rmdir",
     .handler=&cli_rmdir,
-    .description="Lists directories and files in a given path"
+    .description="Removes a directory from given path"
   },
   {
     .cmd_name="exit",
@@ -205,9 +233,9 @@ void cli_mkdir(int argc, char **argv) {
     return;
   }
 
-  char *result = malloc((strlen(cwd) + strlen(argv[1]) + 1) * sizeof(char) );
+  char *result = get_abs(argv[1]);
 
-  if (fs_join(cwd, argv[1], result)) {
+  if (result == NULL) {
     printf("Invalid path given. Cannot create directory\n");
     return;
   }
@@ -221,9 +249,9 @@ void cli_touch(int argc, char **argv) {
     return;
   }
 
-  char *result = malloc((strlen(cwd) + strlen(argv[1]) + 1) * sizeof(char) );
+  char *result = get_abs(argv[1]);
 
-  if (fs_join(cwd, argv[1], result)) {
+  if (result == NULL) {
     printf("Invalid path given. Cannot create file\n");
     return;
   }
@@ -237,18 +265,14 @@ void cli_touch(int argc, char **argv) {
 void cli_ls(int argc, char **argv) {
   char *result;
   if (argc == 2) {
-    if (memcmp(argv[1], ROOT_DIRNAME, strlen(ROOT_DIRNAME)) == 0) {
-      result = argv[1];
-    } else {
-      result = malloc((strlen(cwd) + strlen(argv[1]) + 1) * sizeof(char) );
+    result = get_abs(argv[1]);
 
-      if (fs_join(cwd, argv[1], result)) {
-        printf("Invalid path given. Cannot create directory\n");
-        return;
-      }
+    if (result == NULL) {
+      printf("Invalid path given. Cannot create directory\n");
+      return;
     }
   } else if (argc == 1) {
-    result = cwd;
+    result = get_abs(cwd);
   } else {
     printf("You may pass 0 or 1 parameters to ls\n");
     return;
@@ -262,6 +286,7 @@ void cli_ls(int argc, char **argv) {
   }
 
   if (data != NULL) free(data);
+  free(result);
 }
 
 void cli_cd(int argc, char **argv) {
@@ -271,15 +296,10 @@ void cli_cd(int argc, char **argv) {
     return;
   }
 
-  if (memcmp(argv[1], ROOT_DIRNAME, strlen(ROOT_DIRNAME)) == 0) {
-    result = argv[1];
-  } else {
-    result = malloc((strlen(cwd) + strlen(argv[1]) + 1) * sizeof(char) );
-
-    if (fs_join(cwd, argv[1], result)) {
-      printf("Invalid path given.\n");
-      return;
-    }
+  result = get_abs(argv[1]);
+  if (result == NULL) {
+    printf("Invalid path given.\n");
+    return;
   }
 
   uint32_t t=0;
@@ -287,10 +307,12 @@ void cli_cd(int argc, char **argv) {
 
   if (get_block_from_path(result, &t, &block)) {
     printf("Could not find directory '%s'\n", result);
+    free(result);
     return;
   }
   if (!(block.flags & FILE_BLOCK_DIRECTORY)) {
     printf("%s is not a directory!\n", result);
+    free(result);
     return;
   }
   strcpy(cwd, result);
@@ -300,6 +322,7 @@ void cli_cd(int argc, char **argv) {
     cwd[cwd_len] = '/';
     cwd[cwd_len+1] = 0;
   }
+  free(result);
 }
 
 // WARNING: mutates the passed string

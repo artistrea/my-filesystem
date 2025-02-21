@@ -1,6 +1,6 @@
 missing:
-fix touch (repeated filename)
-cp
-rm
-rmdir
+- refactor a bit
+- add chn
+- add print-tree
+- update cli comments
 

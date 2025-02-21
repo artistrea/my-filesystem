@@ -50,6 +50,10 @@ int fs_link(char* dir, char* to_link);
 
 int fs_unlink(char* path);
 
+int fs_rm(char* path, int rmdir);
+
+void fs_print_full_filetree();
+
 int fs_get_filename(char* abs_path, char* result);
 
 void setup_filesystem(char *main_mem_location);
