@@ -1,3 +1,7 @@
+Nome: Artur Padovesi Piratelli
+Matrícula: 211038208
+
+
 # My filesystem
 
 This filesystem uses a file as storage. Some linux commands were implemented, and everything was implemented

@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   printf(
     "name "
   );
-  textcolor(CLR_CLEAR, CLR_WHITE);
+  textcolor(CLR_CLEAR, CLR_WHITE);tab=readme-ov-filetab=readme-ov-file
   printf(
     "instead\n"
   );
